@@ -7,30 +7,52 @@
 #include <zephyr/zephyr.h>
 #include <drivers/gpio.h>
 
-#define LED0_NODE 	DT_ALIAS(myled)
+/* LED nodes */
+#define LED0_NODE 	DT_ALIAS(led0)
+#define LED1_NODE 	DT_ALIAS(led1)
+#define LED2_NODE 	DT_ALIAS(led2)
+#define LED3_NODE 	DT_ALIAS(led3)
 
-static const struct gpio_dt_spec myLed = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+/* Led device structures */
+static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
+static const struct gpio_dt_spec led4 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
+
+static int usr_led_init(void)
+{
+	int ret = 0;
+	
+	//No sure about this... 
+	device_is_ready(&led1);
+	device_is_ready(&led2);
+	device_is_ready(&led3);
+	device_is_ready(&led4);
+
+	//Configure GPIO pins as single outputs
+	ret = gpio_pin_configure_dt(&led1,  GPIO_OUTPUT | GPIO_OUTPUT_LOW);
+	ret |= gpio_pin_configure_dt(&led2, GPIO_OUTPUT | GPIO_OUTPUT_LOW);
+	ret |= gpio_pin_configure_dt(&led3, GPIO_OUTPUT | GPIO_OUTPUT_LOW);
+	ret |= gpio_pin_configure_dt(&led4, GPIO_OUTPUT | GPIO_OUTPUT_LOW);
+
+	return ret;
+}
 
 void main(void)
 {
-	int ret = 0;
 
-	if(!device_is_ready(myLed.port)){
-		return;
+	if(usr_led_init())
+	{
+		return;	//Error
 	}
 
-	ret = gpio_pin_configure_dt(&myLed, GPIO_OUTPUT_ACTIVE);
-	if(ret <0){
-		return;
-	}
-
-
-	while(1){
-		ret = gpio_pin_toggle_dt(&myLed);
-		if(ret <0){
-			return;
-		}
+	while(1)
+	{
 		printk("hello world\r\n");
+		gpio_pin_toggle_dt(&led1);
+		gpio_pin_toggle_dt(&led2);
+		gpio_pin_toggle_dt(&led3);
+		gpio_pin_toggle_dt(&led4);
 		k_msleep(1000);
 	}
 }
