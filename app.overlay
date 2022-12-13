@@ -1,0 +1,13 @@
+/{
+  led0 {
+      compatible = "gpio-leds";
+      gpios = < &gpio0 17 GPIO_ACTIVE_HIGH>;
+		  label = "Green LED 0";
+  };
+
+  // led1 {
+  //   compatible = "gpio-leds";
+  //   gpios = < &gpio0 18 GPIO_ACTIVE_HIGH>;
+  //   label = "Green LED 1";
+  // };
+};
