@@ -26,25 +26,27 @@ static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 static const struct gpio_dt_spec led4 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 
 /* User buttons device structures  */
-static const struct gpio_dt_spec btn0 = GPIO_DT_SPEC_GET(BTN0_NODE, gpios);
-static const struct gpio_dt_spec btn1 = GPIO_DT_SPEC_GET(BTN1_NODE, gpios);
-static const struct gpio_dt_spec btn2 = GPIO_DT_SPEC_GET(BTN2_NODE, gpios);
-static const struct gpio_dt_spec btn3 = GPIO_DT_SPEC_GET(BTN3_NODE, gpios);
+static const struct gpio_dt_spec btn1 = GPIO_DT_SPEC_GET(BTN0_NODE, gpios);
+static const struct gpio_dt_spec btn2 = GPIO_DT_SPEC_GET(BTN1_NODE, gpios);
+static const struct gpio_dt_spec btn3 = GPIO_DT_SPEC_GET(BTN2_NODE, gpios);
+static const struct gpio_dt_spec btn4 = GPIO_DT_SPEC_GET(BTN3_NODE, gpios);
 
 /* BTN0 & BTN1 callback data structure */
-static struct gpio_callback btn2_cb_data;
 static struct gpio_callback btn3_cb_data;
-
-void btn2_callback_isr(const struct device *dev, struct gpio_callback *cb,
-											 gpio_port_pins_t pins)
-{
-	printk("button 2 falling edge ISR callback called\r\n");
-}
+static struct gpio_callback btn4_cb_data;
 
 void btn3_callback_isr(const struct device *dev, struct gpio_callback *cb,
 											 gpio_port_pins_t pins)
 {
 	printk("button 3 falling edge ISR callback called\r\n");
+	gpio_pin_toggle_dt(&led3);
+}
+
+void btn4_callback_isr(const struct device *dev, struct gpio_callback *cb,
+											 gpio_port_pins_t pins)
+{
+	printk("button 4 falling edge ISR callback called\r\n");
+	gpio_pin_toggle_dt(&led4);
 }
 
 /**
@@ -84,22 +86,22 @@ static int user_btn_init(void)
 	/* No sure if this is the better way... */
 
 	/* Configure GPIO pins as singles inputs without interrupt */
-	ret = gpio_pin_configure_dt(&btn0,  GPIO_INPUT| GPIO_PULL_UP );
-	ret |= gpio_pin_configure_dt(&btn1, GPIO_INPUT| GPIO_PULL_UP );
+	ret = gpio_pin_configure_dt(&btn1,  GPIO_INPUT| GPIO_PULL_UP );
 	ret |= gpio_pin_configure_dt(&btn2, GPIO_INPUT| GPIO_PULL_UP );
 	ret |= gpio_pin_configure_dt(&btn3, GPIO_INPUT| GPIO_PULL_UP );
+	ret |= gpio_pin_configure_dt(&btn4, GPIO_INPUT| GPIO_PULL_UP );
 
 	/* Configure GPIO pins as singles inputs with interrupt */
-	ret |= gpio_pin_interrupt_configure_dt(&btn2, GPIO_INT_EDGE_FALLING);
-	ret |= gpio_pin_interrupt_configure_dt(&btn3, GPIO_INT_EDGE_RISING);
+	ret |= gpio_pin_interrupt_configure_dt(&btn3, GPIO_INT_EDGE_FALLING);
+	ret |= gpio_pin_interrupt_configure_dt(&btn4, GPIO_INT_EDGE_RISING);
 
 	/* btn0 and btn1 Callback initialization  */
-	gpio_init_callback(&btn2_cb_data, btn2_callback_isr, BIT(btn2.pin));
 	gpio_init_callback(&btn3_cb_data, btn3_callback_isr, BIT(btn3.pin));
+	gpio_init_callback(&btn4_cb_data, btn4_callback_isr, BIT(btn4.pin));
 
 	/* Add the callback applications */
-	ret |= gpio_add_callback(btn2.port, &btn2_cb_data);
 	ret |= gpio_add_callback(btn3.port, &btn3_cb_data);
+	ret |= gpio_add_callback(btn4.port, &btn4_cb_data);
 
 	return ret;
 }
@@ -119,27 +121,29 @@ void main(void)
 	}
 
 	/* Main loop program */
-	int btn0State = 0;
+	int btn1State = 0;
+	int btn2State = 0;
 	int loopCounter = 0;
-	int evenFlag = 0;
 
 	while(1)
 	{
-		if(evenFlag % 2)
-			printk("************************\r\n");
-
+		printk("************************\r\n");
 		printk("Main Loop counter is %d\r\n",loopCounter);
-		printk("Press button 0\r\n");
-		btn0State = gpio_pin_get_dt(&btn0);
-		printk("Button 0 state is %d\r\n",btn0State);
+		printk("Press button 1 to turn on LED 1\r\n");
+		printk("Press button 2 to turn on LED 2\r\n");
+		printk("Press button 3 to toogle LED 3 \r\n");
+		printk("Press button 4 to toogle LED 4 \r\n");
 
-		gpio_pin_toggle_dt(&led1);
-		gpio_pin_toggle_dt(&led2);
-		gpio_pin_toggle_dt(&led3);
-		gpio_pin_toggle_dt(&led4);
+		btn1State = gpio_pin_get_dt(&btn1);
+		btn2State = gpio_pin_get_dt(&btn2);
 
-		evenFlag++;
+		gpio_pin_set_dt(&led1, btn1State);
+		gpio_pin_set_dt(&led2, btn2State);
+
+		printk("Button 1 state is %d\r\n", btn1State);
+		printk("Button 2 state is %d\r\n", btn2State);
+
 		loopCounter++;
-		k_msleep(500);
+		k_msleep(100);
 	}
 }
