@@ -8,10 +8,10 @@
 #include <drivers/gpio.h>
 
 /* BTN Nodes */
-#define BTN0_NODE		DT_ALIAS(btn0)
-#define BTN1_NODE		DT_ALIAS(btn1)
-#define BTN2_NODE		DT_ALIAS(btn2)
-#define BTN3_NODE		DT_ALIAS(btn3)
+#define BTN0_NODE		DT_ALIAS(button0)
+#define BTN1_NODE		DT_ALIAS(button1)
+#define BTN2_NODE		DT_ALIAS(button2)
+#define BTN3_NODE		DT_ALIAS(button3)
 
 /* LED Nodes */
 #define LED0_NODE 	DT_ALIAS(led0)
@@ -36,13 +36,13 @@ static int usr_led_init(void)
 {
 	int ret = 0;
 	
-	//No sure about this... 
+	/* No sure if this is the better way... */
 	device_is_ready(&led1);
 	device_is_ready(&led2);
 	device_is_ready(&led3);
 	device_is_ready(&led4);
-	//Test communication
-	//Configure GPIO pins as single outputs
+
+	/* Configure GPIO pins as single outputs */
 	ret = gpio_pin_configure_dt(&led1,  GPIO_OUTPUT | GPIO_OUTPUT_LOW);
 	ret |= gpio_pin_configure_dt(&led2, GPIO_OUTPUT | GPIO_OUTPUT_LOW);
 	ret |= gpio_pin_configure_dt(&led3, GPIO_OUTPUT | GPIO_OUTPUT_LOW);
@@ -53,24 +53,55 @@ static int usr_led_init(void)
 
 static int user_btn_init(void)
 {
+	int ret = 0;
 
+	/* No sure if this is the better way... */
+
+	/* Configure GPIO pins as singles inputs */
+	ret = gpio_pin_configure_dt(&btn0,  GPIO_INPUT| GPIO_PULL_UP );
+	ret |= gpio_pin_configure_dt(&btn1, GPIO_INPUT| GPIO_PULL_UP );
+	ret |= gpio_pin_configure_dt(&btn2, GPIO_INPUT| GPIO_PULL_UP );
+	ret |= gpio_pin_configure_dt(&btn3, GPIO_INPUT| GPIO_PULL_UP );
+
+	return ret;
 }
 
 void main(void)
 {
-
+	/* Configure the user leds */
 	if(usr_led_init())
 	{
 		return;	//Error
 	}
 
+	/* Configure the user buttons */
+	if(user_btn_init())
+	{
+		return; //Error
+	}
+
+	/* Main loop program */
+	int btn0State = 0;
+	int loopCounter = 0;
+	int evenFlag = 0;
+
 	while(1)
 	{
-		printk("hello world\r\n");
+		if(evenFlag % 2)
+			printk("************************\r\n");
+
+		printk("Main Loop counter is %d\r\n",loopCounter);
+		printk("Press button 0\r\n");
+		btn0State = gpio_pin_get_dt(&btn0);
+		printk("Button 0 state is %d\r\n",btn0State);
+
 		gpio_pin_toggle_dt(&led1);
 		gpio_pin_toggle_dt(&led2);
 		gpio_pin_toggle_dt(&led3);
 		gpio_pin_toggle_dt(&led4);
-		k_msleep(1000);
+
+		evenFlag++;
+		loopCounter++;
+		k_msleep(500);
 	}
 }
