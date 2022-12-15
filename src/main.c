@@ -38,15 +38,26 @@ static struct gpio_callback btn4_cb_data;
 void btn3_callback_isr(const struct device *dev, struct gpio_callback *cb,
 											 gpio_port_pins_t pins)
 {
+	static int button3State = 0;
+
 	printk("button 3 falling edge ISR callback called\r\n");
 	gpio_pin_toggle_dt(&led3);
+	
+	button3State = gpio_pin_get_dt(&btn3);
+	printk("Button 3 state is %d\r\n", button3State);
+
 }
 
 void btn4_callback_isr(const struct device *dev, struct gpio_callback *cb,
 											 gpio_port_pins_t pins)
 {
+	static int button4State = 0;
+
 	printk("button 4 falling edge ISR callback called\r\n");
 	gpio_pin_toggle_dt(&led4);
+
+	button4State = gpio_pin_get_dt(&btn4);
+	printk("Button 4 state is %d\r\n", button4State);
 }
 
 /**
@@ -125,14 +136,14 @@ void main(void)
 	int btn2State = 0;
 	int loopCounter = 0;
 
+	printk("************************\r\n");
+	printk("Press button 1 to turn on LED 1\r\n");
+	printk("Press button 2 to turn on LED 2\r\n");
+	printk("Press button 3 to toogle LED 3 \r\n");
+	printk("Press button 4 to toogle LED 4 \r\n");
+
 	while(1)
 	{
-		printk("************************\r\n");
-		printk("Main Loop counter is %d\r\n",loopCounter);
-		printk("Press button 1 to turn on LED 1\r\n");
-		printk("Press button 2 to turn on LED 2\r\n");
-		printk("Press button 3 to toogle LED 3 \r\n");
-		printk("Press button 4 to toogle LED 4 \r\n");
 
 		btn1State = gpio_pin_get_dt(&btn1);
 		btn2State = gpio_pin_get_dt(&btn2);
@@ -140,8 +151,8 @@ void main(void)
 		gpio_pin_set_dt(&led1, btn1State);
 		gpio_pin_set_dt(&led2, btn2State);
 
-		printk("Button 1 state is %d\r\n", btn1State);
-		printk("Button 2 state is %d\r\n", btn2State);
+		// printk("Button 1 state is %d\r\n", btn1State);
+		// printk("Button 2 state is %d\r\n", btn2State);
 
 		loopCounter++;
 		k_msleep(100);
