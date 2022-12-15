@@ -31,7 +31,27 @@ static const struct gpio_dt_spec btn1 = GPIO_DT_SPEC_GET(BTN1_NODE, gpios);
 static const struct gpio_dt_spec btn2 = GPIO_DT_SPEC_GET(BTN2_NODE, gpios);
 static const struct gpio_dt_spec btn3 = GPIO_DT_SPEC_GET(BTN3_NODE, gpios);
 
+/* BTN0 & BTN1 callback data structure */
+static struct gpio_callback btn2_cb_data;
+static struct gpio_callback btn3_cb_data;
 
+void btn2_callback_isr(const struct device *dev, struct gpio_callback *cb,
+											 gpio_port_pins_t pins)
+{
+	printk("button 2 falling edge ISR callback called\r\n");
+}
+
+void btn3_callback_isr(const struct device *dev, struct gpio_callback *cb,
+											 gpio_port_pins_t pins)
+{
+	printk("button 3 falling edge ISR callback called\r\n");
+}
+
+/**
+ * @brief Function to intialize the user LEDs  
+ * 
+ * @return int 
+ */
 static int usr_led_init(void)
 {
 	int ret = 0;
@@ -51,17 +71,35 @@ static int usr_led_init(void)
 	return ret;
 }
 
+/**
+ * @brief Function to initialize the user buttons btn0 &btn1 as single input
+ * and btn2 & btn3 with interrupt of falling and rising edge respetively 
+ * 
+ * @return int 
+ */
 static int user_btn_init(void)
 {
 	int ret = 0;
 
 	/* No sure if this is the better way... */
 
-	/* Configure GPIO pins as singles inputs */
+	/* Configure GPIO pins as singles inputs without interrupt */
 	ret = gpio_pin_configure_dt(&btn0,  GPIO_INPUT| GPIO_PULL_UP );
 	ret |= gpio_pin_configure_dt(&btn1, GPIO_INPUT| GPIO_PULL_UP );
 	ret |= gpio_pin_configure_dt(&btn2, GPIO_INPUT| GPIO_PULL_UP );
 	ret |= gpio_pin_configure_dt(&btn3, GPIO_INPUT| GPIO_PULL_UP );
+
+	/* Configure GPIO pins as singles inputs with interrupt */
+	ret |= gpio_pin_interrupt_configure_dt(&btn2, GPIO_INT_EDGE_FALLING);
+	ret |= gpio_pin_interrupt_configure_dt(&btn3, GPIO_INT_EDGE_RISING);
+
+	/* btn0 and btn1 Callback initialization  */
+	gpio_init_callback(&btn2_cb_data, btn2_callback_isr, BIT(btn2.pin));
+	gpio_init_callback(&btn3_cb_data, btn3_callback_isr, BIT(btn3.pin));
+
+	/* Add the callback applications */
+	ret |= gpio_add_callback(btn2.port, &btn2_cb_data);
+	ret |= gpio_add_callback(btn3.port, &btn3_cb_data);
 
 	return ret;
 }
